@@ -1,0 +1,24 @@
+{
+  "name": "pullmenu",
+  "version": "1.0.0",
+  "description": "dmenu GitHub PR launcher",
+  "repository": "https://github.com/caseyWebb/pullmenu",
+  "author": "Casey Webb <notcaseywebb@gmail.com> (https://caseyWebb.xyz)",
+  "license": "WTFPL",
+  "bin": {
+    "pullmenu": "./index.js"
+  },
+  "keywords": [
+    "dmenu",
+    "github",
+    "pull-request",
+    "pull",
+    "request",
+    "pr",
+    "launcher",
+    "linux"
+  ],
+  "dependencies": {
+    "node-fetch": "^2.3.0"
+  }
+}
