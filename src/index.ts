@@ -29,7 +29,7 @@ async function dmenu(options: string[]): Promise<string> {
   const uniqOpts = Array.from(new Set(options))
   try {
       const { stdout } = await pify(exec)(
-      `echo "${uniqOpts.join('\n').replace(/"/g, '\\"')}" | dmenu -i`
+      `. $HOME/.dmenurc && echo "${uniqOpts.join('\n').replace(/"/g, '\\"')}" | dmenu $DMENU_OPTIONS -i`
     )
     return stdout.trim()
   } catch (e) {
