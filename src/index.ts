@@ -9,10 +9,11 @@ import fetch from 'node-fetch'
 
 type Repo = {
   name: string
+  owner: string
   url: string
 }
 
-type IssueOrPullRequest = {
+type IssueLike = {
   number: number
   repo: string
   url: string
@@ -60,7 +61,10 @@ async function fetchRepositories(forceRefresh?: boolean): Promise<Repo[]> {
     const repoArguments = 'first: 100'
     const repoSchema = `
       nodes {
-        name: nameWithOwner
+        name
+        owner {
+          login
+        }
         url
       }
     `
@@ -75,61 +79,40 @@ async function fetchRepositories(forceRefresh?: boolean): Promise<Repo[]> {
     const repos = [
       ...data.viewer.repositories.nodes,
       ...data.viewer.repositoriesContributedTo.nodes
-    ]
+    ].map((repo) => ({
+      ...repo,
+      owner: repo.owner.login
+    }))
     await pify(fs.writeFile)(cache, JSON.stringify(repos))
     return repos
   }
 }
 
-async function fetchRepositoryData(repo: string): Promise<{
-  issues: IssueOrPullRequest[]
-  pulls: IssueOrPullRequest[]
-}> {
-  const issueArguments = 'first: 100, states: OPEN'
-  const issueQuerySchema = `
-    title
-    number
-    url
-  `
+enum IssueLikeType {
+  Issues = 'issues',
+  PullRequests = 'pullRequests'
+}
+
+async function fetchRepositoryData(repo: Repo, resource: IssueLikeType): Promise<IssueLike[]> {
   const token = await getToken()
-  const data = await queryGithub(token, `
+  const query = `
     query {
-      viewer {
-        issues(${issueArguments}) { nodes { ${issueQuerySchema} } }
-        pullRequests(${issueArguments}) { nodes { ${issueQuerySchema} } }
-      }
-      search(query: "assignee:caseyWebb state:open repo:${repo}", type: ISSUE, first: 100) {
-        edges {
-          node {
-            __typename
-            ...on PullRequest { ${ issueQuerySchema } }
-            ...on Issue { ${issueQuerySchema} }
+      repository(owner: "${repo.owner}", name: "${repo.name}") {
+        ${resource}(states: OPEN, last: 100) {
+          nodes {
+            number
+            title
+            url
           }
         }
       }
     }
-  `)
-  const searchResults = data.search.edges.map((edge: any) => edge.node)
-  const pulls = [
-    // pulls assigned to you
-    ...formatGraphQLIssues({ nodes: searchResults.filter((node: any) => node.__typename === "PullRequest") }),
-    // pulls created by you
-    ...formatGraphQLIssues(data.viewer.pullRequests)
-  ]
-  const issues = [
-    // issues assigned to you
-    ...formatGraphQLIssues({ nodes: searchResults.filter((node: any) => node.__typename = "Issue") }),
-    // issues created by you
-    ...formatGraphQLIssues(data.viewer.issues)
-  ]
-  return { pulls, issues }
-}
-
-function formatGraphQLIssues(data: any): IssueOrPullRequest[] {
-  return data.nodes.map((pr: any) => ({
-    number: pr.number,
-    url: pr.url,
-    displayText: `#${pr.number} - ${pr.title}`
+  `
+  const data = await queryGithub(token, query)
+  return data.repository[resource].nodes.map((i: any) => ({
+    number: i.number,
+    url: i.url,
+    displayText: `#${i.number} - ${i.title}`
   }))
 }
 
@@ -144,7 +127,7 @@ async function promptResource(): Promise<string> {
 async function promptRepos(repos: Repo[]): Promise<undefined | Repo> {
   const refreshOpt = 'Refresh Repository List'
   const options = [
-    ...repos.map((repo) => repo.name),
+    ...repos.map((repo) => `${repo.owner}/${repo.name}`),
     refreshOpt
   ]
   const stdout = await dmenu(options)
@@ -152,11 +135,12 @@ async function promptRepos(repos: Repo[]): Promise<undefined | Repo> {
     repos = await fetchRepositories(true)
     return promptRepos(repos)
   } else {
-    return repos.find((repo) => repo.name === stdout)
+    const [_, owner, name] = stdout.match(/(.+)\/(.+)/) as any
+    return repos.find((repo) => repo.owner === owner && repo.name === name)
   }
 }
 
-async function promptIssuesOrPullRequests(issues: IssueOrPullRequest[]): Promise<undefined | IssueOrPullRequest> {
+async function promptIssueLike(issues: IssueLike[]): Promise<undefined | IssueLike> {
   const stdout = await dmenu(issues.map((i) => i.displayText))
   const matches = stdout.match(/^#(\d+)/) as any
   const number = parseInt(matches[1], 10)
@@ -174,17 +158,10 @@ async function main(): Promise<void> {
     if (selectedResource === 'Open on GitHub') {
       open(selectedRepo.url)
     } else {
-      const data = await fetchRepositoryData(selectedRepo.name)
-      let selectedIssueOrPull: undefined | { url: string }
-      switch (selectedResource) {
-        case 'Issues':
-        selectedIssueOrPull = await promptIssuesOrPullRequests(data.issues)
-        break
-        case 'Pull Requests':
-        // pull requests and issues have the same schema
-        selectedIssueOrPull = await promptIssuesOrPullRequests(data.pulls)
-        break
-      }
+      const data = await fetchRepositoryData(selectedRepo, selectedResource === 'Issues'
+        ? IssueLikeType.Issues
+        : IssueLikeType.PullRequests)
+      const selectedIssueOrPull = await promptIssueLike(data)
       if (!selectedIssueOrPull) throw new Error('Unexpected error: Failed to match selected item')
       open(selectedIssueOrPull.url)
     }
