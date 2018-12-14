@@ -9,7 +9,7 @@ type Repo = {
   url: string
 }
 
-type Issue = {
+type IssueOrPullRequest = {
   number: number
   repo: string
   url: string
@@ -28,82 +28,89 @@ async function dmenu(options: string[]): Promise<string> {
   return stdout.trim()
 }
 
-async function fetchData(token: string): Promise<{
-  repos: Repo[]
-  issues: Issue[]
-  pulls: Issue[]
-}> {
+async function queryGithub(token: string, query: string): Promise<any> {
   const url = 'https://api.github.com/graphql'
-  const repoArguments = 'first: 100'
-  const issueArguments = 'first: 100, states: OPEN'
-  const repoQuerySchema = `
-    nodes {
-      name: nameWithOwner
-      url
-    }
-  `
-  const issueQuerySchema = `
-    nodes {
-      title
-      number
-      url
-      repo: repository { nameWithOwner }
-    }
-  `
   const res = await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `bearer ${token}`
     },
-    body: JSON.stringify({
-      query: `
-        query {
-          viewer {
-            repositories(${repoArguments}) { ${repoQuerySchema} }
-            repositoriesContributedTo(${repoArguments}) { ${repoQuerySchema} }
-            issues(${issueArguments}) { ${issueQuerySchema} }
-            pullRequests(${issueArguments}) { ${issueQuerySchema} }
-          }
-          search(query: "assignee:caseyWebb is:issue state:open", type: ISSUE, first: 100) {
-            edges {
-              node {
-                ...on Issue {
-                  title
-                  number
-                  url
-                  repo: repository { nameWithOwner }
-                }
-              }
-            }
-          }
-        }
-      `
-    })
+    body: JSON.stringify({ query })
   })
-
   const { data } = await res.json()
+  return data
+}
 
-  const repos = [
+async function fetchRepositories(token: string): Promise<Repo[]> {
+  const repoArguments = 'first: 100'
+  const repoSchema = `
+    nodes {
+      name: nameWithOwner
+      url
+    }
+  `
+  const data = await queryGithub(token, `
+    query {
+      viewer {
+        repositories(${repoArguments}) { ${repoSchema} }
+        repositoriesContributedTo(${repoArguments}) { ${repoSchema} }
+      }
+    }
+  `)
+  return [
     ...data.viewer.repositories.nodes,
     ...data.viewer.repositoriesContributedTo.nodes
   ]
-  const pulls = formatGraphQLIssues(data.viewer.pullRequests)
+}
+
+async function fetchRepositoryData(token: string, repo: string): Promise<{
+  issues: IssueOrPullRequest[]
+  pulls: IssueOrPullRequest[]
+}> {
+  const issueArguments = 'first: 100, states: OPEN'
+  const issueQuerySchema = `
+    title
+    number
+    url
+  `
+  const data = await queryGithub(token, `
+    query {
+      viewer {
+        issues(${issueArguments}) { nodes { ${issueQuerySchema} } }
+        pullRequests(${issueArguments}) { nodes { ${issueQuerySchema} } }
+      }
+      search(query: "assignee:caseyWebb state:open repo:${repo}", type: ISSUE, first: 100) {
+        edges {
+          node {
+            __typename
+            ...on PullRequest { ${ issueQuerySchema } }
+            ...on Issue { ${issueQuerySchema} }
+          }
+        }
+      }
+    }
+  `)
+  const searchResults = data.search.edges.map((edge: any) => edge.node)
+  const pulls = [
+    // pulls assigned to you
+    ...formatGraphQLIssues({ nodes: searchResults.filter((node: any) => node.__typename === "PullRequest") }),
+    // pulls created by you
+    ...formatGraphQLIssues(data.viewer.pullRequests)
+  ]
   const issues = [
     // issues assigned to you
-    ...formatGraphQLIssues({ nodes: data.search.edges.map((edge: any) => edge.node) }),
+    ...formatGraphQLIssues({ nodes: searchResults.filter((node: any) => node.__typename = "Issue") }),
     // issues created by you
     ...formatGraphQLIssues(data.viewer.issues)
   ]
-    
-  return { pulls, issues, repos }
+  return { pulls, issues }
 }
 
-function formatGraphQLIssues(data: any): Issue[] {
+function formatGraphQLIssues(data: any): IssueOrPullRequest[] {
   return data.nodes.map((pr: any) => ({
     number: pr.number,
-    repo: pr.repo.nameWithOwner,
     url: pr.url,
-    displayText: `${pr.repo.nameWithOwner} - #${pr.number} (${pr.title})`
+    displayText: `#${pr.number} - (${pr.title})`
   }))
 }
 
@@ -111,8 +118,12 @@ function uniq(arr: string[]) {
   return Array.from(new Set(arr))
 }
 
+async function open(url: string) {
+  await pify(exec)(`xdg-open ${url}`)
+}
+
 async function promptResource(): Promise<string> {
-  return await dmenu(['repos', 'issues', 'pulls'])
+  return await dmenu(['Open on GitHub', 'Issues', 'Pull Requests'])
 }
 
 async function promptRepos(repos: Repo[]): Promise<undefined | Repo> {
@@ -120,37 +131,39 @@ async function promptRepos(repos: Repo[]): Promise<undefined | Repo> {
   return repos.find((repo) => repo.name === stdout)
 }
 
-async function promptIssues(issues: Issue[]): Promise<undefined | Issue> {
-  const stdout = await dmenu(issues.map((pr) => pr.displayText))
-  const [_, repo, _number] = stdout.match(/(.+) - #(\d+)/) as any
-  const number = parseInt(_number, 10)
-  return issues.find((pr) => pr.number === number && pr.repo === repo)
+async function promptIssuesOrPullRequests(issues: IssueOrPullRequest[]): Promise<undefined | IssueOrPullRequest> {
+  const stdout = await dmenu(issues.map((i) => i.displayText))
+  const matches = stdout.match(/^#(\d+)/) as any
+  const number = parseInt(matches[1], 10)
+  return issues.find((i) => i.number === number)
 }
 
 async function main(): Promise<void> {
   try {
     const token = await getToken()
-    const [data, resource] = await Promise.all([
-      fetchData(token),
-      promptResource()
-    ])
-    let selected: undefined | { url: string }
-    switch (resource) {
-      case 'repos':
-      selected = await promptRepos(data.repos)
-      break
-      case 'issues':
-      selected = await promptIssues(data.issues)
-      break
-      case 'pulls':
-      // pull requests and issues have the same schema
-      selected = await promptIssues(data.pulls)
-      break
+    const repos = await fetchRepositories(token)
+    const selectedRepo = await promptRepos(repos)
+    const selectedResource = await promptResource()
+
+    if (!selectedRepo) throw new Error('Error selecting repository')
+
+    if (selectedResource === 'Open on GitHub') {
+      open(selectedRepo.url)
+    } else {
+      const data = await fetchRepositoryData(token, selectedRepo.name)
+      let selectedIssueOrPull: undefined | { url: string }
+      switch (selectedResource) {
+        case 'Issues':
+        selectedIssueOrPull = await promptIssuesOrPullRequests(data.issues)
+        break
+        case 'Pull Requests':
+        // pull requests and issues have the same schema
+        selectedIssueOrPull = await promptIssuesOrPullRequests(data.pulls)
+        break
+      }
+      if (!selectedIssueOrPull) throw new Error('Unexpected error: Failed to match selected item')
+      open(selectedIssueOrPull.url)
     }
-    if (!selected) {
-      throw new Error('Unexpected error: Failed to match selected item')
-    }
-    await pify(exec)(`xdg-open ${selected.url}`)
   } catch (e) {
     await pify(exec)(`notify-send "ghmenu error" "${e.message}"`)
   }
