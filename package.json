@@ -6,7 +6,7 @@
   "author": "Casey Webb <notcaseywebb@gmail.com> (https://caseyWebb.xyz)",
   "license": "WTFPL",
   "bin": {
-    "ghmenu": "./dist/ghmenu.js"
+    "ghmenu": "./dist/index.js"
   },
   "keywords": [
     "dmenu",
@@ -27,7 +27,7 @@
     "linux"
   ],
   "scripts": {
-    "build": "tsc && chmod +x ./dist/*"
+    "build": "tsc && chmod +x ./dist/index.js"
   },
   "husky": {
     "precommit": "pretty-quick"
