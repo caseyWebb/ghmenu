@@ -1,6 +1,6 @@
 {
   "name": "ghmenu",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "dmenu-based GitHub launcher",
   "repository": "https://github.com/caseyWebb/pullmenu",
   "author": "Casey Webb <notcaseywebb@gmail.com> (https://caseyWebb.xyz)",
