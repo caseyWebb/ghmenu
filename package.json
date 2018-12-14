@@ -6,7 +6,8 @@
   "author": "Casey Webb <notcaseywebb@gmail.com> (https://caseyWebb.xyz)",
   "license": "WTFPL",
   "bin": {
-    "pullmenu": "./index.js"
+    "ghmenu": "./dist/ghmenu.js",
+    "pullmenu": "./dist/pullmenu.js"
   },
   "keywords": [
     "dmenu",
@@ -18,7 +19,23 @@
     "launcher",
     "linux"
   ],
+  "scripts": {
+    "build": "tsc && chmod +x ./dist/*"
+  },
+  "husky": {
+    "precommit": "pretty-quick"
+  },
   "dependencies": {
     "node-fetch": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.15",
+    "@types/node-fetch": "^2.1.4",
+    "husky": "^1.2.1",
+    "prettier": "^1.15.3",
+    "pretty-quick": "^1.8.0",
+    "tslint": "^5.11.0",
+    "tslint-config-prettier": "^1.17.0",
+    "typescript": "^3.2.2"
   }
 }
