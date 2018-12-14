@@ -1,21 +1,28 @@
 {
-  "name": "pullmenu",
+  "name": "ghmenu",
   "version": "1.0.0",
-  "description": "dmenu GitHub PR launcher",
+  "description": "dmenu-based GitHub launcher",
   "repository": "https://github.com/caseyWebb/pullmenu",
   "author": "Casey Webb <notcaseywebb@gmail.com> (https://caseyWebb.xyz)",
   "license": "WTFPL",
   "bin": {
-    "ghmenu": "./dist/ghmenu.js",
-    "pullmenu": "./dist/pullmenu.js"
+    "ghmenu": "./dist/ghmenu.js"
   },
   "keywords": [
     "dmenu",
     "github",
+    "gh",
     "pull-request",
     "pull",
     "request",
     "pr",
+    "prs",
+    "issue",
+    "issues",
+    "repo",
+    "repository",
+    "repositories",
+    "i3",
     "launcher",
     "linux"
   ],
