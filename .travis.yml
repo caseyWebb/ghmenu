@@ -1,26 +1,26 @@
 language: node_js
 node_js:
-- stable
+  - stable
 branches:
   only:
-  - master
-  - "/v\\d+\\.\\d+/"
+    - master
+    - /v\d+\.\d+/
 cache:
   yarn: true
   directories:
-  - node_modules
+    - node_modules
 script:
-- yarn lint
-- yarn build
+  - yarn lint
+  - yarn build
 after_script:
-- npx codecov
+  - npx codecov
 notifications:
   email: false
 deploy:
   provider: npm
   email: notcaseywebb@gmail.com
   api_key:
-    secure: EvZ+JnXR0z2eqkpLWK50TTq0tcb/RZUh3QWIlOBC/CQdKXebZmSYf6Z2ox6T6tLc7PsVP7Dt2udEKKQAGMzP7e7aO8EnLdC1rGffF/5SsyM1ti7L6YDRpmkY/uPp+8iISQu/td9bDd0oDwGpCTrO30fwIruPsK0Qj/2xVX5Gz1JqyNWSa/hXCoM/7s2jOKxvUCYV6mNyYYFR8r6D6RgZcKp17E2htVGrSHw21lNLY35Z33MD/GUmZ86ajMLLqjUG/6ecOxmyoUx+KdhrYEy6HutwIZclj4F1iDHNMnwM6zMQQaVlArweKLQEChkBxQkPMq4tcacZSfuwwe51F/hP/L7nXuw3be0pxDYqD5k4oP2iGqZ2EhBtko+oPwI0mDAYJ3nVi306LdngE0Fh/QD3P/bKeKU2U4T8wSkkuy+jrM/uTfmW+uotGQ/XWs1/dFw55OZn/WmN5RA0bTYyhquFhBlbKwEhJSZ37iwV/fCZFCJcxHjrAD3nt95xh4Jmo5CAq6xcDQ7xmQEfVQyliNiFtnjhmFemtbRz6OS5LEMPP65MegPgbR0LK9xTTUoewHU6c099Giz8/HdEAqTY2a82CAY0XNkWt3a8HkDGQHdv89vuLm10pRlGp4v/2w3Uoy6K0e26vuwPhZkLpWT0wzZPMeGEuRwjO985PEvuLkzDWJ8=
+    secure: d14s5MZeL7XWiFVuftZcSLtbLPzmCm29qeMgGfNdjOLtAwutYI8tfdSVj5ZsZemaGzsDp+KNDWUukASVUbPvx10XLEPLq/oJyUDnyi2oKbMTllaJA/ApiJiqcGkEvKv8LmFn38Lmq9Nr/mD0uiUaBQ692PkfeKx7QS8Z0LyraIXQD3QUbh35Q9bKMSFV/Yt1HidHUCSpOD2AeNW/+SxRT1MbyKxdWJpki1/q54/XsUjpm69A8G0k96Sdzg+GBJoj17/+XBPyrHwUxfd81ClZc2gCQTkR/5Xbs5pJD9BzBTmitpIzxXP8hvG9q+x7qm1jCGp29EcBb37rVAfKrz5e9Gmj6yk+ZtvuNkvxSTLqXXQQIXJclulW1u/HYn++HEvEvR19U7ZLy5llaN1L1J5ullwUQzGDu1H7Hwhanah0eOB5a8vJEX3NqUG8BY+EHFG2SlcXTjnGExVnRkG22oKVWD4ZzCov0uy+yVkcxJx01XbEckf10Rd4zPvEKQ+3hSDqOW1w5PccFTYqI8iU0K0CjoJpdnSjA6q7d2A+GbJuPPQxz5ekJKq6+TEjTGr+SbP5+Vc/psHV12NsqVqw36SC72xCMTEdX3aCDksDl0yZqwAEfCvQhEmUIYbiMfIotPBar3Zk1A1iDCMYq9XPiGOcjEXlT87XWCPGDMPTBvgbctE=
   on:
     tags: true
     repo: caseyWebb/ghmenu
