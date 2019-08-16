@@ -1,0 +1,26 @@
+language: node_js
+node_js:
+- stable
+branches:
+  only:
+  - master
+  - "/v\\d+\\.\\d+/"
+cache:
+  yarn: true
+  directories:
+  - node_modules
+script:
+- yarn lint
+- yarn build
+after_script:
+- npx codecov
+notifications:
+  email: false
+deploy:
+  provider: npm
+  email: notcaseywebb@gmail.com
+  api_key:
+    secure: EvZ+JnXR0z2eqkpLWK50TTq0tcb/RZUh3QWIlOBC/CQdKXebZmSYf6Z2ox6T6tLc7PsVP7Dt2udEKKQAGMzP7e7aO8EnLdC1rGffF/5SsyM1ti7L6YDRpmkY/uPp+8iISQu/td9bDd0oDwGpCTrO30fwIruPsK0Qj/2xVX5Gz1JqyNWSa/hXCoM/7s2jOKxvUCYV6mNyYYFR8r6D6RgZcKp17E2htVGrSHw21lNLY35Z33MD/GUmZ86ajMLLqjUG/6ecOxmyoUx+KdhrYEy6HutwIZclj4F1iDHNMnwM6zMQQaVlArweKLQEChkBxQkPMq4tcacZSfuwwe51F/hP/L7nXuw3be0pxDYqD5k4oP2iGqZ2EhBtko+oPwI0mDAYJ3nVi306LdngE0Fh/QD3P/bKeKU2U4T8wSkkuy+jrM/uTfmW+uotGQ/XWs1/dFw55OZn/WmN5RA0bTYyhquFhBlbKwEhJSZ37iwV/fCZFCJcxHjrAD3nt95xh4Jmo5CAq6xcDQ7xmQEfVQyliNiFtnjhmFemtbRz6OS5LEMPP65MegPgbR0LK9xTTUoewHU6c099Giz8/HdEAqTY2a82CAY0XNkWt3a8HkDGQHdv89vuLm10pRlGp4v/2w3Uoy6K0e26vuwPhZkLpWT0wzZPMeGEuRwjO985PEvuLkzDWJ8=
+  on:
+    tags: true
+    repo: caseyWebb/ghmenu
