@@ -7,13 +7,13 @@ import * as path from 'path'
 import { promisify as pify } from 'util'
 import fetch from 'node-fetch'
 
-type Repo = {
+interface Repo {
   name: string
   owner: string
   url: string
 }
 
-type IssueLike = {
+interface IssueLike {
   number: number
   repo: string
   url: string
@@ -28,8 +28,10 @@ async function getToken(): Promise<string> {
 async function dmenu(options: string[]): Promise<string> {
   const uniqOpts = Array.from(new Set(options))
   try {
-      const { stdout } = await pify(exec)(
-      `. $HOME/.dmenurc && echo "${uniqOpts.join('\n').replace(/"/g, '\\"')}" | dmenu $DMENU_OPTIONS -i`
+    const { stdout } = await pify(exec)(
+      `. $HOME/.dmenurc && echo "${uniqOpts
+        .join('\n')
+        .replace(/"/g, '\\"')}" | dmenu $DMENU_OPTIONS -i`
     )
     return stdout.trim()
   } catch (e) {
@@ -68,14 +70,17 @@ async function fetchRepositories(forceRefresh?: boolean): Promise<Repo[]> {
         url
       }
     `
-    const data = await queryGithub(token, `
+    const data = await queryGithub(
+      token,
+      `
       query {
         viewer {
           repositories(${repoArguments}) { ${repoSchema} }
           repositoriesContributedTo(${repoArguments}) { ${repoSchema} }
         }
       }
-    `)
+    `
+    )
     const repos = [
       ...data.viewer.repositories.nodes,
       ...data.viewer.repositoriesContributedTo.nodes
@@ -93,7 +98,10 @@ enum IssueLikeType {
   PullRequests = 'pullRequests'
 }
 
-async function fetchRepositoryData(repo: Repo, resource: IssueLikeType): Promise<IssueLike[]> {
+async function fetchRepositoryData(
+  repo: Repo,
+  resource: IssueLikeType
+): Promise<IssueLike[]> {
   const token = await getToken()
   const query = `
     query {
@@ -140,7 +148,9 @@ async function promptRepos(repos: Repo[]): Promise<undefined | Repo> {
   }
 }
 
-async function promptIssueLike(issues: IssueLike[]): Promise<undefined | IssueLike> {
+async function promptIssueLike(
+  issues: IssueLike[]
+): Promise<undefined | IssueLike> {
   const stdout = await dmenu(issues.map((i) => i.displayText))
   const matches = stdout.match(/^#(\d+)/) as any
   const number = parseInt(matches[1], 10)
@@ -158,11 +168,15 @@ async function main(): Promise<void> {
     if (selectedResource === 'Open on GitHub') {
       open(selectedRepo.url)
     } else {
-      const data = await fetchRepositoryData(selectedRepo, selectedResource === 'Issues'
-        ? IssueLikeType.Issues
-        : IssueLikeType.PullRequests)
+      const data = await fetchRepositoryData(
+        selectedRepo,
+        selectedResource === 'Issues'
+          ? IssueLikeType.Issues
+          : IssueLikeType.PullRequests
+      )
       const selectedIssueOrPull = await promptIssueLike(data)
-      if (!selectedIssueOrPull) throw new Error('Unexpected error: Failed to match selected item')
+      if (!selectedIssueOrPull)
+        throw new Error('Unexpected error: Failed to match selected item')
       open(selectedIssueOrPull.url)
     }
   } catch (e) {

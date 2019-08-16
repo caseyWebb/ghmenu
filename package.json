@@ -30,10 +30,8 @@
     "linux"
   ],
   "scripts": {
-    "build": "tsc && chmod +x ./dist/index.js"
-  },
-  "husky": {
-    "precommit": "pretty-quick"
+    "build": "tsc && chmod +x ./dist/index.js",
+    "lint": "eslint --ext .ts ./src"
   },
   "dependencies": {
     "node-fetch": "^2.3.0"
@@ -41,11 +39,22 @@
   "devDependencies": {
     "@types/node": "^10.12.15",
     "@types/node-fetch": "^2.1.4",
+    "eslint": "^6.1.0",
+    "eslint-config-profiscience": "^4.0.7",
     "husky": "^3.0.3",
     "prettier": "^1.15.3",
     "pretty-quick": "^1.8.0",
-    "tslint": "^5.11.0",
-    "tslint-config-prettier": "^1.17.0",
     "typescript": "^3.2.2"
+  },
+  "eslintConfig": {
+    "extends": "profiscience"
+  },
+  "husky": {
+    "precommit": "pretty-quick"
+  },
+  "prettier": {
+    "arrowParens": "always",
+    "semi": false,
+    "singleQuote": true
   }
 }
