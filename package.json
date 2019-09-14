@@ -62,7 +62,10 @@
     ]
   },
   "eslintConfig": {
-    "extends": "profiscience"
+    "extends": "profiscience",
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    }
   },
   "husky": {
     "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
