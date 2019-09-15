@@ -15,7 +15,6 @@ interface Repo {
 
 interface IssueLike {
   number: number
-  repo: string
   url: string
   displayText: string
 }
@@ -40,7 +39,7 @@ async function dmenu(options: string[]): Promise<string> {
   }
 }
 
-async function queryGithub(token: string, query: string): Promise<any> {
+async function queryGithub<T>(token: string, query: string): Promise<T> {
   const url = 'https://api.github.com/graphql'
   const res = await fetch(url, {
     method: 'POST',
@@ -70,7 +69,16 @@ async function fetchRepositories(forceRefresh?: boolean): Promise<Repo[]> {
         url
       }
     `
-    const data = await queryGithub(
+    const data = await queryGithub<{
+      viewer: {
+        repositories: {
+          nodes: { name: string; url: string; owner: { login: string } }[]
+        }
+        repositoriesContributedTo: {
+          nodes: { name: string; url: string; owner: { login: string } }[]
+        }
+      }
+    }>(
       token,
       `
       query {
@@ -116,15 +124,20 @@ async function fetchRepositoryData(
       }
     }
   `
-  const data = await queryGithub(token, query)
-  return data.repository[resource].nodes.map((i: any) => ({
+  const data = await queryGithub<{
+    repository: Record<
+      string,
+      { nodes: { number: number; url: string; title: string }[] }
+    >
+  }>(token, query)
+  return data.repository[resource].nodes.map((i) => ({
     number: i.number,
     url: i.url,
     displayText: `#${i.number} - ${i.title}`
   }))
 }
 
-async function open(url: string) {
+async function open(url: string): Promise<void> {
   await pify(exec)(`xdg-open ${url}`)
 }
 
@@ -143,7 +156,9 @@ async function promptRepos(repos: Repo[]): Promise<undefined | Repo> {
     repos = await fetchRepositories(true)
     return promptRepos(repos)
   } else {
-    const [_, owner, name] = stdout.match(/(.+)\/(.+)/) as any
+    const [owner, name] = (/(.+)\/(.+)/.exec(stdout) as RegExpExecArray).slice(
+      1
+    )
     return repos.find((repo) => repo.owner === owner && repo.name === name)
   }
 }
@@ -152,7 +167,7 @@ async function promptIssueLike(
   issues: IssueLike[]
 ): Promise<undefined | IssueLike> {
   const stdout = await dmenu(issues.map((i) => i.displayText))
-  const matches = stdout.match(/^#(\d+)/) as any
+  const matches = /^#(\d+)/.exec(stdout) as RegExpExecArray
   const number = parseInt(matches[1], 10)
   return issues.find((i) => i.number === number)
 }
