@@ -41,7 +41,7 @@
     "@commitlint/cli": "^8.2.0",
     "@commitlint/config-conventional": "^8.2.0",
     "@types/node": "^12.12.4",
-    "@types/node-fetch": "^2.5.2",
+    "@types/node-fetch": "^2.5.3",
     "cz-conventional-changelog": "^3.0.2",
     "eslint": "^6.6.0",
     "eslint-config-profiscience": "^4.1.10",
