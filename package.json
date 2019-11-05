@@ -49,7 +49,7 @@
     "prettier": "^1.18.2",
     "pretty-quick": "^2.0.0",
     "standard-version": "^7.0.0",
-    "typescript": "^3.6.4"
+    "typescript": "^3.7.2"
   },
   "config": {
     "commitizen": {
