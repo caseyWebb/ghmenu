@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^8.2.0",
-    "@commitlint/config-conventional": "^8.2.0",
+    "@commitlint/config-conventional": "^8.3.3",
     "@types/node": "^13.1.2",
     "@types/node-fetch": "^2.5.4",
     "cz-conventional-changelog": "^3.0.2",
