@@ -47,7 +47,7 @@
     "eslint-config-profiscience": "^5.0.2",
     "husky": "^4.2.5",
     "prettier": "^1.19.1",
-    "pretty-quick": "^2.0.1",
+    "pretty-quick": "^2.0.2",
     "standard-version": "^8.0.2",
     "typescript": "^3.9.7"
   },
